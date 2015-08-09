@@ -23,5 +23,9 @@ public class LPFConstant {
      * It represents File create operation
      */
     public static final String FILE_CREATE = "create";
+    /**
+     * It represents Default Window size for File
+     */
+    public static final long DEFAULT_WINDOW_SIZE = 10L;
 
 }
