@@ -8,10 +8,11 @@ public class FileOperationPerTimestampTask extends
         TimerTask {
 
     private final List<LPFEntry<String, String>> filenameNOperationEntryList;
+    private final Cache cache;
 
-    FileOperationPerTimestampTask(
-            List<LPFEntry<String, String>> filenameNOperationEntryList) {
+    FileOperationPerTimestampTask(List<LPFEntry<String, String>> filenameNOperationEntryList, Cache cache) {
         this.filenameNOperationEntryList = filenameNOperationEntryList;
+        this.cache = cache;
     }
 
     @Override
@@ -48,7 +49,7 @@ public class FileOperationPerTimestampTask extends
         String filename = transaction.getKey();
         switch (operation) {
             case LPFConstant.FILE_OPEN:
-                FileOperation.open(filename);
+                FileOperation.open(filename,cache);
                 break;
             case LPFConstant.FILE_CREATE:
                 FileOperation.create(filename);

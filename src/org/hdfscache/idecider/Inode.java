@@ -1,5 +1,7 @@
 package org.hdfscache.idecider;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * This class represents File meta-data information. Each file is represent by
  * its Inode.
@@ -9,7 +11,7 @@ package org.hdfscache.idecider;
  */
 public class Inode {
 
-    private static long fileCounter = 0L;
+    private static AtomicLong fileCounter = new AtomicLong(1);
 
     private final long inodeId;
     private final String path;
@@ -21,7 +23,8 @@ public class Inode {
     private volatile int popularity;
 
     Inode(String filename, long createtime) {
-        this(fileCounter, filename, createtime, 0L, 0L, false, LPFConstant.DEFAULT_WINDOW_SIZE, 0);
+        this(fileCounter.longValue(), filename, createtime, 0L, 0L, false, LPFConstant.DEFAULT_WINDOW_SIZE, 0);
+        fileCounter.incrementAndGet();
     }
 
     Inode(long inodeid, String path, long creationtime,
@@ -38,21 +41,17 @@ public class Inode {
         this.popularity = popularity;
     }
 
-    public static void incrFileCounter() {
-        fileCounter += 1;
-    }
-
     @Override
     public String toString() {
         return inodeId + "|" + path + "|" + accesscount + "|" + windowsize + "|" + isCached + "|" + creationtime + "|" + accesstime + "|" + popularity;
     }
 
-    public long getAccesscount() {
+    public synchronized long getAccesscount() {
         return accesscount;
     }
 
-    public void setAccesscount(long accesscount) {
-        this.accesscount = accesscount;
+    public synchronized void incrementAndSetAccesscount() {
+        this.accesscount += 1;
     }
 
     public long getWindowsize() {
@@ -102,4 +101,5 @@ public class Inode {
     public String getPath() {
         return path;
     }
+
 }

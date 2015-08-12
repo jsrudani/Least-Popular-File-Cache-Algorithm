@@ -47,8 +47,14 @@ public class Preprocessing {
      */
     private List<LPFEntry<Long, TimerTask>> taskPerTimestampList = new ArrayList<LPFEntry<Long, TimerTask>>();
 
-    Preprocessing(String filename) {
+    /**
+     * It represents type of cache requested by user
+     */
+    private final Cache cache;
+
+    public Preprocessing(String filename, Cache cache) {
         this.fileName = filename;
+        this.cache = cache;
     }
 
     /**
@@ -118,7 +124,7 @@ public class Preprocessing {
             List<LPFEntry<String, String>> fileNameOperationEntries) {
         // System.out.println("List prepared for timestamp :" + startTime +
         // " is :" + fileNameOperationEntries);
-        taskPerTimestampList.add(new LPFEntry<Long, TimerTask>(startTime, new FileOperationPerTimestampTask(fileNameOperationEntries)));
+        taskPerTimestampList.add(new LPFEntry<Long, TimerTask>(startTime, new FileOperationPerTimestampTask(fileNameOperationEntries, cache)));
     }
 
     /**

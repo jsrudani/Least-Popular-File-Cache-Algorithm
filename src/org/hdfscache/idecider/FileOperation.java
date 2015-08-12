@@ -21,14 +21,13 @@ public class FileOperation {
      *            The file to be read
      * @throws IllegalArgumentException
      */
-    public static void open(String filename)
+    public static void open(String filename, Cache cache)
             throws IllegalArgumentException {
         System.out.println("Open " + filename + " at " + System.currentTimeMillis());
         // Check if file is created or not
         if (fileToInodeMap.containsKey(filename)) {
             Inode fileInodeInfo = fileToInodeMap.get(filename);
-            // Increment the access count
-            fileInodeInfo.setAccesscount((fileInodeInfo.getAccesscount() + 1));
+            cache.read(fileInodeInfo);
             System.out.println("Valid Inode " + fileToInodeMap.get(filename));
         } else {
             System.out.println("Since file is not created so Open is invalid for file " + filename);
@@ -47,7 +46,6 @@ public class FileOperation {
             throws Exception {
         long creationtime = System.currentTimeMillis();
         System.out.println("Create " + filename + " at " + creationtime);
-        Inode.incrFileCounter();
         fileToInodeMap.put(filename, new Inode(filename, creationtime));
     }
 

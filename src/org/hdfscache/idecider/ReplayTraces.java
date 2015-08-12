@@ -16,7 +16,7 @@ public class ReplayTraces {
     private final List<LPFEntry<Long, TimerTask>> batchedTransactionPerTimestamp;
     private Timer startJobTimer;
 
-    ReplayTraces(
+    public ReplayTraces(
             List<LPFEntry<Long, TimerTask>> batchedTransactionPerTimestamp) {
         this.batchedTransactionPerTimestamp = batchedTransactionPerTimestamp;
         startJobTimer = new Timer();
