@@ -39,5 +39,20 @@ public class LPFConstant {
      * It represents Least Popular File Cache
      */
     public static final String LPF_CACHE_TYPE = "LPF";
+    /**
+     * It represents Total number of files can be cache. So total 3 files can be
+     * cached.
+     */
+    public static final long TOTAL_CACHE_ENTRY = 4L;
+    /**
+     * It represents the caching eligiblity for file. If file access count is
+     * greater than threshold then it is eligible for caching.
+     */
+    public static final long LPF_ACCESS_COUNT_THRESHOLD = 3L;
+    /**
+     * It represents Thread pool size used to execute the task submitted to
+     * executor.
+     */
+    public static final int THREAD_POOL_SIZE = 3;
 
 }

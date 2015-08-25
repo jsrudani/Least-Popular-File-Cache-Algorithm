@@ -27,6 +27,7 @@ public class FileOperation {
         // Check if file is created or not
         if (fileToInodeMap.containsKey(filename)) {
             Inode fileInodeInfo = fileToInodeMap.get(filename);
+            // Call the respective cache implementation of read operation
             cache.read(fileInodeInfo);
             System.out.println("Valid Inode " + fileToInodeMap.get(filename));
         } else {
