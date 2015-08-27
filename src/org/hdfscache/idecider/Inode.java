@@ -20,17 +20,17 @@ public class Inode {
     private volatile boolean isCached;
     private long creationtime;
     private volatile long accesstime;
-    private volatile int popularity;
+    private volatile float popularity;
 
     Inode(String filename, long createtime) {
-        this(fileCounter.longValue(), filename, createtime, 0L, 0L, false, LPFConstant.DEFAULT_WINDOW_SIZE, 0);
+        this(fileCounter.longValue(), filename, createtime, 0L, 0L, false, LPFConstant.DEFAULT_WINDOW_SIZE, 0.0f);
         fileCounter.incrementAndGet();
     }
 
     Inode(long inodeid, String path, long creationtime,
             long accesstime, long accesscount,
             boolean isCached, long windowsize,
-            int popularity) {
+            float popularity) {
         this.inodeId = inodeid;
         this.path = path;
         this.creationtime = creationtime;
@@ -46,12 +46,38 @@ public class Inode {
         return inodeId + "|" + path + "|" + accesscount + "|" + windowsize + "|" + isCached + "|" + creationtime + "|" + accesstime + "|" + popularity;
     }
 
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (int) (inodeId ^ (inodeId >>> 32));
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Inode other = (Inode) obj;
+        if (inodeId != other.inodeId)
+            return false;
+        return true;
+    }
+
     public synchronized long getAccesscount() {
         return accesscount;
     }
 
     public synchronized void incrementAndSetAccesscount() {
         this.accesscount += 1;
+    }
+
+    public synchronized void resetFileAccesscount() {
+        this.accesscount = 0;
     }
 
     public long getWindowsize() {
@@ -86,11 +112,11 @@ public class Inode {
         this.accesstime = accesstime;
     }
 
-    public int getPopularity() {
+    public float getPopularity() {
         return popularity;
     }
 
-    public void setPopularity(int popularity) {
+    public void setPopularity(float popularity) {
         this.popularity = popularity;
     }
 

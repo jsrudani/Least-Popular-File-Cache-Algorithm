@@ -54,5 +54,11 @@ public class LPFConstant {
      * executor.
      */
     public static final int THREAD_POOL_SIZE = 3;
+    /**
+     * It represents threshold for window size. If the window size increase
+     * above threshold value then set the window size to threshold value. The
+     * value of threshold is configured based on application.
+     */
+    public static final long WINDOW_SIZE_THRESHOLD = 4L;
 
 }

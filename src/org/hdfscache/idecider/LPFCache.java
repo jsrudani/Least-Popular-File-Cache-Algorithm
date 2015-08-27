@@ -1,5 +1,9 @@
 package org.hdfscache.idecider;
 
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
@@ -12,9 +16,23 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class LPFCache implements Cache {
     /**
-     * This indicates the number of files already in cache
+     * This represents Least Popular File cache
      */
-    private volatile AtomicLong currentFileCacheCount = new AtomicLong(1);
+    private static ConcurrentSkipListMap<Inode, Long> LPFCACHE = new ConcurrentSkipListMap<Inode, Long>(new Comparator<Inode>() {
+        @Override
+        public int compare(Inode o1, Inode o2) {
+            return (int) (o1.getPopularity() - o2.getPopularity());
+        }
+    });
+    /**
+     * This represents the current total number of cached file. Every time file
+     * is added to LPF cache, count is incremented
+     */
+    private static volatile AtomicLong numberOfCachedFile = new AtomicLong(0);
+    /**
+     * This represents collection of all popularity values in ascending order
+     */
+    private static ConcurrentSkipListSet<Float> popularityOrderedValueSet = new ConcurrentSkipListSet<Float>();
     /**
      * Executor which is used to submit the cache and uncache task
      */
@@ -25,12 +43,14 @@ public class LPFCache implements Cache {
         synchronized (file) {
             // Increment the access count
             file.incrementAndSetAccesscount();
+            // Set the access time
+            file.setAccesstime(System.currentTimeMillis());
             // Check if file is already cached or not. If yes then hit else miss
             if (file.isCached()) {
-                // Hit
+                // Hit. Log the hit count
             } else {
-                // Miss
-                // Eligiblity check
+                // Miss. Log the miss count
+                // performCacheOperation(file);
 
             }
         }
@@ -53,25 +73,87 @@ public class LPFCache implements Cache {
             // mention. So here we are using total cache entry. If we know the
             // size of each file then we can compare the required size with
             // current cache size.
-            if (currentFileCacheCount.longValue() < LPFConstant.TOTAL_CACHE_ENTRY) {
+            if (numberOfCachedFile.longValue() < LPFConstant.TOTAL_CACHE_ENTRY) {
                 cacheUncacheTaskExecutor.submit(new AddToCache(file));
             } else {
                 cacheUncacheTaskExecutor.submit(new MakeRoomNAddToCache(file));
-                currentFileCacheCount.decrementAndGet();
+                numberOfCachedFile.decrementAndGet();
             }
             file.setCached(true);
-            currentFileCacheCount.incrementAndGet();
+            numberOfCachedFile.incrementAndGet();
         }
     }
 
     /**
      * It calculates popularity of file based on its access count/age and other
-     * file characteristics.
+     * file characteristics. The popularity value is compared with 50% of Least
+     * Popular and Most Popular value. Based on comparison window size for file
+     * will be increase/decrease.
      * 
      * @param file
      */
     private void calculatePopularity(Inode file) {
+        synchronized (file) {
+            float newPopularity = 0.0f;
+            long newWindowSize = 0L;
+            float thresholdPopularity = 0.0f;
+            long index = 0;
+            // Calculate the popularity value for a file based on access count
+            // and window size
+            if (file.getWindowsize() != 0) {
+                float fileAccessRate = (((float) file.getAccesscount()) / ((float) file.getWindowsize()));
+                long fileAge = Math.abs((System.currentTimeMillis() - file.getAccesstime()));
+                newPopularity = ((float) fileAccessRate) / ((float) fileAge);
+            }
+            // Compare the calculated popularity value with Least Popular and
+            // Most Popular value from the LPF cache
+            long size = (numberOfCachedFile.get() - 1);
+            index = size / 2;
+            float firstOperand = getMedianPopularityValue(index);
+            if (!popularityOrderedValueSet.isEmpty()) {
+                if (size % 2 == 0) {
+                    float secondOperand = popularityOrderedValueSet.higher(firstOperand);
+                    thresholdPopularity = (firstOperand + secondOperand) / 2;
+                } else {
+                    thresholdPopularity = firstOperand;
+                }
+            }
+            // Double the window size if new popularity is greater than old
+            // popularity else half the window size. Increase the window size
+            // upto certain limit.
+            if (newPopularity > thresholdPopularity) {
+                newWindowSize = newWindowSize * 2;
+            } else {
+                newWindowSize = newWindowSize / 2;
+            }
+            // Compare with threshold value
+            if (newWindowSize > LPFConstant.WINDOW_SIZE_THRESHOLD) {
+                newWindowSize = LPFConstant.WINDOW_SIZE_THRESHOLD;
+            }
+            // Set the new popularity and window size
+            file.setPopularity(newPopularity);
+            file.setWindowsize(newWindowSize);
+        }
+    }
 
+    /**
+     * It is used to get the median value out of all sorted popularity value.
+     * Currently we are traversing the sorted set and get the median. But in the
+     * future we need to make data structure like SortedList so that it is
+     * sorted on every insert and also have random access.
+     * 
+     */
+    private float getMedianPopularityValue(long index) {
+        long traverseCount = 0L;
+        Iterator<Float> popularityValueIterator = popularityOrderedValueSet.iterator();
+        while (popularityValueIterator.hasNext()) {
+            if (traverseCount == index) {
+                return popularityValueIterator.next();
+            }
+            traverseCount += 1;
+            popularityValueIterator.next();
+        }
+        return 0;
     }
 
     /**
@@ -83,7 +165,14 @@ public class LPFCache implements Cache {
      * @param file
      */
     private void addToLPFCache(Inode file) {
-
+        // Check if file is in cache
+        if (!LPFCACHE.containsKey(file)) {
+            // Insert into Sorted set the priority value
+            popularityOrderedValueSet.add(file.getPopularity());
+            LPFCACHE.put(file, file.getInodeId());
+            file.setCached(true);
+            // spawn new thread to check for window expiration
+        }
     }
 
     /**
@@ -103,7 +192,7 @@ public class LPFCache implements Cache {
 
         @Override
         public void run() {
-            // Cal. Popularity
+            // Calculate Popularity
             calculatePopularity(file);
             // Add to LPF Cache
             addToLPFCache(file);
@@ -127,7 +216,18 @@ public class LPFCache implements Cache {
 
         @Override
         public void run() {
-
+            // Reset Access count and Window size, clear cache flag for file
+            // which is removed from cache
+            Inode leastPopularFile = LPFCACHE.firstEntry().getKey();
+            leastPopularFile.setCached(false);
+            leastPopularFile.setWindowsize(LPFConstant.DEFAULT_WINDOW_SIZE);
+            leastPopularFile.resetFileAccesscount();
+            // Remove the first entry from Map
+            LPFCACHE.pollFirstEntry();
+            // Calculate Popularity for new file
+            calculatePopularity(file);
+            // Add new file to LPF Cache
+            addToLPFCache(file);
         }
     }
 }
