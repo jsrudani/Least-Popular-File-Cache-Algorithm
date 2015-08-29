@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class Inode {
 
-    private static AtomicLong fileCounter = new AtomicLong(1);
+    private static AtomicLong fileCounter = new AtomicLong(0);
 
     private final long inodeId;
     private final String path;

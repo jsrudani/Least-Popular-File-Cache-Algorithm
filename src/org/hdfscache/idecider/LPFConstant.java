@@ -48,17 +48,17 @@ public class LPFConstant {
      * It represents the caching eligiblity for file. If file access count is
      * greater than threshold then it is eligible for caching.
      */
-    public static final long LPF_ACCESS_COUNT_THRESHOLD = 3L;
+    public static final long LPF_ACCESS_COUNT_THRESHOLD = 1L;
     /**
      * It represents Thread pool size used to execute the task submitted to
      * executor.
      */
-    public static final int THREAD_POOL_SIZE = 3;
+    public static final int THREAD_POOL_SIZE = 6;
     /**
      * It represents threshold for window size. If the window size increase
      * above threshold value then set the window size to threshold value. The
      * value of threshold is configured based on application.
      */
-    public static final long WINDOW_SIZE_THRESHOLD = 4L;
+    public static final long WINDOW_SIZE_THRESHOLD = 25L;
 
 }

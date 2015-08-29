@@ -1,7 +1,5 @@
 package org.hdfscache.idecider;
 
-import org.hdfscache.idecider.Preprocessing;
-import org.hdfscache.idecider.ReplayTraces;
 
 /**
  * This class is main application class. It is used to read/process/replay
@@ -21,8 +19,9 @@ public class CacheSimulator {
             // Need to add check for file existent
             String filename = args[0];
             String cacheType = args[1];
-            // Check which type of cache is requested and delegate the request to that cache implementation
-            Cache cache = checkAndReturnCacheReference (cacheType);
+            // Check which type of cache is requested and delegate the request
+            // to that cache implementation
+            Cache cache = checkAndReturnCacheReference(cacheType);
             // Reading and Pre-processing steps
             Preprocessing preprocess = new Preprocessing(filename, cache);
             preprocess.readAndProcessTrace();
@@ -35,14 +34,15 @@ public class CacheSimulator {
         }
     }
 
-    private static Cache checkAndReturnCacheReference (String cacheType) {
+    private static Cache checkAndReturnCacheReference(
+            String cacheType) {
         Cache delegate = null;
         switch (cacheType) {
-             case LPFConstant.LPF_CACHE_TYPE:
-                 delegate = new LPFCache();
-                 break;
-             default :
-                 throw new IllegalArgumentException("Unknown Cache");
+            case LPFConstant.LPF_CACHE_TYPE:
+                delegate = new LPFCache();
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown Cache");
         }
         return delegate;
     }

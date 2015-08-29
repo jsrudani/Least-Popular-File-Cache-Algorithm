@@ -12,6 +12,10 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class FileOperation {
 
+    /***
+     * It represents the mapping of filename -> Inode. It is thread safe and
+     * efficient since concurrent hash map locks only certain region of Map.
+     */
     private static Map<String, Inode> fileToInodeMap = new ConcurrentHashMap<String, Inode>();
 
     /**
@@ -29,7 +33,8 @@ public class FileOperation {
             Inode fileInodeInfo = fileToInodeMap.get(filename);
             // Call the respective cache implementation of read operation
             cache.read(fileInodeInfo);
-            System.out.println("Valid Inode " + fileToInodeMap.get(filename));
+            // System.out.println("Valid Inode " +
+            // fileToInodeMap.get(filename));
         } else {
             System.out.println("Since file is not created so Open is invalid for file " + filename);
         }
