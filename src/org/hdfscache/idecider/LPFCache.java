@@ -65,8 +65,16 @@ public class LPFCache implements Cache {
             try {
                 // Increment the access count
                 file.incrementAndSetAccesscount();
-                // Set the access time
-                file.setAccesstime(System.currentTimeMillis());
+                // Set the Start window time
+                if (file.getStartWindowTime() == 0) {
+                    file.setStartWindowTime(System.currentTimeMillis());
+                }
+                // Set the access time and last access time
+                long currentTime = System.currentTimeMillis();
+                // Check if current time is less than window time span and set
+                // the previous access time
+                file.checkAndSetLastAccessTime(currentTime);
+                file.setAccesstime(currentTime);
                 // Increment the total request count
                 LPF_CACHE_TOTAL_REQUEST.incrementAndGet();
                 // Check if file is already cached or not. If yes then hit else
@@ -123,6 +131,10 @@ public class LPFCache implements Cache {
             }
             file.setCached(true);
             numberOfCachedFile.incrementAndGet();
+        } else {
+            // Set the Start window to 0. So this will make sure the start
+            // window is started only when file is eligible for caching
+            file.resetStartWindowTime();
         }
     }
 
@@ -146,7 +158,10 @@ public class LPFCache implements Cache {
             // and window size
             if (file.getWindowsize() != 0) {
                 float fileAccessRate = (((float) file.getAccesscount()) / ((float) file.getWindowsize()));
-                long fileAge = Math.abs((System.currentTimeMillis() - file.getAccesstime()));
+                long fileAge = ((file.getStartWindowTime() + file.getWindowsize()) - (file.getLastAccessTime()));
+                if (fileAge <= 0) {
+                    throw new Exception("There is some problem in updating Last access time");
+                }
                 newPopularity = ((float) fileAccessRate) / ((float) fileAge);
                 // Compare the calculated popularity value with Least Popular
                 // and Most Popular value from the LPF cache
@@ -337,17 +352,23 @@ public class LPFCache implements Cache {
                     if (LPFCACHE.remove(file) != null) {
                         // Decrement count of number of cached file
                         numberOfCachedFile.decrementAndGet();
+                        // Get the previous window size
+                        long oldWindowSize = file.getWindowsize();
                         // Calculate Popularity for new file
                         calculatePopularity(file);
                         // Check if file is popular or not
                         if (file.getWindowsize() > 0) {
                             // Reset the file fields
                             file.resetFileAccesscount();
+                            // Update the start window time for a file
+                            file.setStartWindowTime((file.getStartWindowTime() + oldWindowSize));
                             // Increment count of number of cached file
                             numberOfCachedFile.incrementAndGet();
                             // Add new file to LPF Cache
                             addToLPFCache(file);
                         } else {
+                            // Reset the Start Window for a file
+                            file.resetStartWindowTime();
                             // Since new window size is less than expected so
                             // file is removed from the cache
                             file.setCached(false);

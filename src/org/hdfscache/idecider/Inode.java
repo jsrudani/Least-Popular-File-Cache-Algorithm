@@ -11,26 +11,75 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class Inode {
 
+    /**
+     * It is used to count the number of files. It is incremented atomically for
+     * every new file created.
+     */
     private static AtomicLong fileCounter = new AtomicLong(0);
 
+    /**
+     * It is used to uniquely identifies the file.
+     */
     private final long inodeId;
+    /**
+     * It denotes the path of a file.
+     */
     private final String path;
+    /**
+     * It denotes the number of times file is accessed. The access count is
+     * reset at window expiration if file is not popular any further.
+     */
     private volatile long accesscount;
+    /**
+     * It denotes the time span for a file to be in cache. Window size is either
+     * incremented/decremented based on popularity value.
+     */
     private volatile long windowsize;
+    /**
+     * It is used to denote if file is cached or not.
+     */
     private volatile boolean isCached;
+    /**
+     * It represents the creation time of a file.
+     */
     private long creationtime;
+    /**
+     * It denotes the access time for a file. It is updated whenever file is
+     * read. It is used to determine the last access time based on window
+     * timespan.
+     */
     private volatile long accesstime;
+    /**
+     * It denotes the popularity value of a file. The popularity value is
+     * calculated based on file access count, file window size and file age
+     * (Last time file was accessed in a window).
+     */
     private volatile float popularity;
+    /**
+     * It is used denote the last access to a file in its window. Since it is
+     * asynchronous environment so caching and uncaching task is handled by
+     * background component. So at window expiration we need to know the last
+     * time file was accessed in that particular window and this variable holds
+     * that value.
+     */
+    private volatile long lastAccessTime;
+    /**
+     * It denotes the start time for a window. It helps to calculate the total
+     * timespan for a window. It is used in determining the last access time.
+     * Whenever file is uncache or not eligible for caching the value is reset.
+     */
+    private volatile long startWindowTime;
 
     Inode(String filename, long createtime) {
-        this(fileCounter.longValue(), filename, createtime, 0L, 0L, false, LPFConstant.DEFAULT_WINDOW_SIZE, 0.0f);
+        this(fileCounter.longValue(), filename, createtime, LPFConstant.DEFAULT_ACCESS_TIME, LPFConstant.DEFAULT_ACCESS_COUNT, false, LPFConstant.DEFAULT_WINDOW_SIZE, LPFConstant.DEFAULT_POPULARITY_VALUE, LPFConstant.DEFAULT_START_WINDOW_TIME, LPFConstant.DEFAULT_LAST_ACCESS_TIME);
         fileCounter.incrementAndGet();
     }
 
     Inode(long inodeid, String path, long creationtime,
             long accesstime, long accesscount,
             boolean isCached, long windowsize,
-            float popularity) {
+            float popularity, long startWindowTime,
+            long lastAccessTime) {
         this.inodeId = inodeid;
         this.path = path;
         this.creationtime = creationtime;
@@ -39,6 +88,8 @@ public class Inode {
         this.isCached = isCached;
         this.windowsize = windowsize;
         this.popularity = popularity;
+        this.startWindowTime = startWindowTime;
+        this.lastAccessTime = lastAccessTime;
     }
 
     @Override
@@ -126,6 +177,32 @@ public class Inode {
 
     public String getPath() {
         return path;
+    }
+
+    public long getLastAccessTime() {
+        return lastAccessTime;
+    }
+
+    public void setLastAccessTime(long lastAccessTime) {
+        this.lastAccessTime = lastAccessTime;
+    }
+
+    public long getStartWindowTime() {
+        return startWindowTime;
+    }
+
+    public void setStartWindowTime(long startWindowTime) {
+        this.startWindowTime = startWindowTime;
+    }
+
+    public synchronized void resetStartWindowTime() {
+        this.startWindowTime = 0;
+    }
+
+    public void checkAndSetLastAccessTime(long currentTime) {
+        if (currentTime < (this.startWindowTime + this.windowsize)) {
+            setLastAccessTime(this.accesstime);
+        }
     }
 
 }

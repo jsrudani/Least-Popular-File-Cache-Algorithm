@@ -60,5 +60,25 @@ public class LPFConstant {
      * value of threshold is configured based on application.
      */
     public static final long WINDOW_SIZE_THRESHOLD = 25L;
+    /**
+     * It represents Default Access count of a File
+     */
+    public static final long DEFAULT_ACCESS_COUNT = 0L;
+    /**
+     * It represents Default Access time of a File
+     */
+    public static final long DEFAULT_ACCESS_TIME = 0L;
+    /**
+     * It represents Default Popularity of a File
+     */
+    public static final float DEFAULT_POPULARITY_VALUE = 0.0f;
+    /**
+     * It represents Default Starting window of a File
+     */
+    public static final long DEFAULT_START_WINDOW_TIME = 0L;
+    /**
+     * It represents Default Last Access Time of a File
+     */
+    public static final long DEFAULT_LAST_ACCESS_TIME = 0L;
 
 }
