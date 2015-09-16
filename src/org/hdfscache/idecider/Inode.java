@@ -199,9 +199,18 @@ public class Inode {
         this.startWindowTime = 0;
     }
 
+    /**
+     * It is used to store last access time for a file. Initially when access
+     * time for a file is default value, it checks if access time is default
+     * value then set the current time which is passed as an argument else set
+     * the previous access time.
+     * 
+     * @param currentTime
+     */
     public void checkAndSetLastAccessTime(long currentTime) {
         if (currentTime < (this.startWindowTime + this.windowsize)) {
-            setLastAccessTime(this.accesstime);
+            long currentAccessTime = (this.accesstime != LPFConstant.DEFAULT_ACCESS_TIME) ? this.accesstime : currentTime;
+            setLastAccessTime(currentAccessTime);
         }
     }
 

@@ -170,7 +170,7 @@ public class LPFCache implements Cache {
                 float firstOperand = getMedianPopularityValue(index);
                 if (!popularityOrderedValueSet.isEmpty()) {
                     if (size % 2 == 0) {
-                        float secondOperand = popularityOrderedValueSet.higher(firstOperand);
+                        float secondOperand = (popularityOrderedValueSet.higher(firstOperand) != null) ? (popularityOrderedValueSet.higher(firstOperand)) : firstOperand;
                         thresholdPopularity = (firstOperand + secondOperand) / 2;
                     } else {
                         thresholdPopularity = firstOperand;
@@ -311,6 +311,7 @@ public class LPFCache implements Cache {
                     leastPopularFile.setCached(false);
                     leastPopularFile.setWindowsize(LPFConstant.DEFAULT_WINDOW_SIZE);
                     leastPopularFile.resetFileAccesscount();
+                    leastPopularFile.resetStartWindowTime();
                     // Remove the first entry from Map
                     LPFCACHE.pollFirstEntry();
                     // Decrement the number of cache file
