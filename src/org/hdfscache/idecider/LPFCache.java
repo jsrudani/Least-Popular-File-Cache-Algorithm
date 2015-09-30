@@ -24,7 +24,10 @@ public class LPFCache implements Cache {
     private static volatile ConcurrentSkipListMap<Inode, Long> LPFCACHE = new ConcurrentSkipListMap<Inode, Long>(new Comparator<Inode>() {
         @Override
         public int compare(Inode o1, Inode o2) {
-            return (int) (o1.getPopularity() - o2.getPopularity());
+            if (o1.equals(o2)) {
+                return 0;
+            }
+            return (o1.getPopularity() < o2.getPopularity() ? -1 : 1);
         }
     });
     /**
@@ -374,6 +377,7 @@ public class LPFCache implements Cache {
                             // file is removed from the cache
                             file.setCached(false);
                             System.out.println("Not popular at window expiration file -> " + file.getInodeId());
+                            System.out.println("Updated Cache " + LPFCACHE);
                         }
                     }
                 }
